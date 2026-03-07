@@ -11,7 +11,7 @@
  */
  //Arima_Lucisus2_1458334_2330mAh_Final.c
 
-qcom,8926ss-batterydata {
+qcom,lucisus2-batterydata {
 	qcom,fcc-mah = <2330>;
 	qcom,default-rbatt-mohm = <139>;
 	qcom,rbatt-capacitive-mohm = <50>;
