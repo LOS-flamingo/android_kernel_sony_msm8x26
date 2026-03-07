@@ -154,7 +154,7 @@
 &mtp_batterydata{
 	qcom,rpull-up-kohm = <100>;
 	qcom,vref-batt-therm = <1800000>;
-	/include/ "batterydata-8226ds_dp.dtsi"
+	/include/ "batterydata-arima-lucisus2-1458334.dtsi"
 };
 
 &pm8226_bms {
@@ -273,7 +273,7 @@
 &mtp_batterydata{
 	qcom,rpull-up-kohm = <100>;
 	qcom,vref-batt-therm = <1800000>;
-	/include/ "batterydata-8226ds_dp.dtsi"
+	/include/ "batterydata-arima-lucisus2-1458334.dtsi"
 };
 
 &pm8226_bms {
@@ -411,7 +411,7 @@
 &mtp_batterydata{
 	qcom,rpull-up-kohm = <100>;
 	qcom,vref-batt-therm = <1800000>;
-	/include/ "batterydata-8226ds_dp.dtsi"
+	/include/ "batterydata-arima-lucisus2-1458334.dtsi"
 };
 
 &pm8226_bms {
