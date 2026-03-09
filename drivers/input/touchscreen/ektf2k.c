@@ -3180,7 +3180,7 @@ static int elan_ktf2k_ts_resume(struct i2c_client *client)
 	mutex_unlock(&private_ts->lock);
 	return 0;
 #else
-	//int rc = 0, retry = 3;
+	int rc = 0, retry = 0;
 #ifdef RE_CALIBRATION	
 	uint8_t buf_recv[4] = { 0 };
 #endif
@@ -3202,17 +3202,17 @@ static int elan_ktf2k_ts_resume(struct i2c_client *client)
 	{
 		printk(KERN_INFO "[elan] %s: enter\n", __func__);
 
-		//[All][Main][TP][DMS05342323][38605][thundertang] Reduce resume time(Resume performance) ++
-		//gpio_direction_output(SYSTEM_RESET_PIN_SR, 0);
-		//msleep(5);
-		//gpio_direction_output(SYSTEM_RESET_PIN_SR, 1);
-		//msleep(150);	
-		//[All][Main][TP][DMS05342323][38605][thundertang] Reduce resume time(Resume performance) --
-				
-		if (__hello_packet_handler(private_ts->client) < 0) 
-		{
-	    		printk("[elan] %s : hellopacket's receive fail \n",__func__);
-		}			
+		elan_ktf2k_ts_hw_reset(private_ts->client);
+		for (retry = 0; retry < 3; retry++) {
+			rc = __hello_packet_handler(private_ts->client);
+			if (rc == 0)
+				break;
+			msleep(20);
+			elan_ktf2k_ts_hw_reset(private_ts->client);
+		}
+		if (rc != 0)
+			printk("[elan] %s: hello packet failed, rc=%d\n",
+				__func__, rc);
 
 		schedule_delayed_work(&private_ts->check_work, msecs_to_jiffies(2500));	
 		enable_irq(client->irq);
@@ -3290,5 +3290,4 @@ module_exit(elan_ktf2k_ts_exit);
 
 MODULE_DESCRIPTION("ELAN KTF2K Touchscreen Driver");
 MODULE_LICENSE("GPL");
-
 
