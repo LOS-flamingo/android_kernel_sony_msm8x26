@@ -28,6 +28,10 @@
 
 #define MIN_REFRESH_RATE 30
 
+#ifdef CONFIG_SONY_FLAMINGO
+#define FLAMINGO_TOUCH_RESET_GPIO 16
+#endif
+
 DEFINE_LED_TRIGGER(bl_led_trigger);
 
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
@@ -211,7 +215,12 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	struct mdss_panel_info *pinfo = NULL;
+	
+#ifdef CONFIG_SONY_FLAMINGO
+	int rc = 0;
+#else
 	int i, rc = 0;
+#endif
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -245,12 +254,28 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
 				gpio_set_value((ctrl_pdata->disp_en_gpio), 1);
 
+#ifdef CONFIG_SONY_FLAMINGO
+			if (gpio_is_valid(FLAMINGO_TOUCH_RESET_GPIO))
+				gpio_direction_output(FLAMINGO_TOUCH_RESET_GPIO, 0);
+
+			gpio_set_value(ctrl_pdata->rst_gpio, 1);
+			msleep(10);
+			gpio_set_value(ctrl_pdata->rst_gpio, 0);
+			msleep(10);
+			gpio_set_value(ctrl_pdata->rst_gpio, 1);
+
+			if (gpio_is_valid(FLAMINGO_TOUCH_RESET_GPIO))
+				gpio_direction_output(FLAMINGO_TOUCH_RESET_GPIO, 1);
+
+			msleep(120);
+#else
 			for (i = 0; i < pdata->panel_info.rst_seq_len; ++i) {
 				gpio_set_value((ctrl_pdata->rst_gpio),
 					pdata->panel_info.rst_seq[i]);
 				if (pdata->panel_info.rst_seq[++i])
 					usleep(pinfo->rst_seq[i] * 1000);
 			}
+#endif
 		}
 
 		if (gpio_is_valid(ctrl_pdata->mode_gpio)) {
