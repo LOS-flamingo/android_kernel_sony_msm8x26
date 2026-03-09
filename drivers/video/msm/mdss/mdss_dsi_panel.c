@@ -250,7 +250,7 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			pr_err("gpio request failed\n");
 			return rc;
 		}
-		if (!pinfo->panel_power_on) {
+		if (!pinfo->panel_power_on || pinfo->mipi.lp11_init) {
 			if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
 				gpio_set_value((ctrl_pdata->disp_en_gpio), 1);
 
