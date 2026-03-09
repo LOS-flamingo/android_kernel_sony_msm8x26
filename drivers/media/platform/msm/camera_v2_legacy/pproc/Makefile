@@ -1,0 +1,2 @@
+obj-$(CONFIG_MSMB_CAMERA_LEGACY) += cpp/
+obj-$(CONFIG_MSMB_CAMERA_LEGACY) += vpe/

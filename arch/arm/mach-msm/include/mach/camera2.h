@@ -88,6 +88,14 @@ struct msm_camera_sensor_board_info {
 	const char *misc_regulator;
 	struct msm_camera_power_ctrl_t power_info;
 	struct msm_camera_sensor_slave_info *cam_slave_info;
+#ifdef CONFIG_MSMB_CAMERA_LEGACY
+	/* Legacy camera_v2 expects direct access on board info */
+	struct msm_camera_gpio_conf *gpio_conf;
+	struct camera_vreg_t *cam_vreg;
+	int num_vreg;
+	struct msm_camera_i2c_conf *i2c_conf;
+	struct msm_sensor_init_params *sensor_init_params;
+#endif
 };
 
 enum msm_camera_i2c_cmd_type {
@@ -131,6 +139,20 @@ struct msm_eeprom_memory_map_t {
 	struct eeprom_slave_add_t saddr;
 };
 
+#ifdef CONFIG_MSMB_CAMERA_LEGACY
+/*
+ * Legacy camera_v2 expects this historical type/tag name.
+ * Keep it available only for MSMB_CAMERA_LEGACY builds.
+ */
+struct eeprom_memory_map_t {
+	struct eeprom_map_t page;
+	struct eeprom_map_t pageen;
+	struct eeprom_map_t poll;
+	struct eeprom_map_t mem;
+	struct eeprom_slave_add_t saddr;
+};
+#endif
+
 struct msm_eeprom_memory_block_t {
 	struct msm_eeprom_memory_map_t *map;
 	uint32_t num_map;	/* number of map blocks */
@@ -150,6 +172,11 @@ struct msm_eeprom_board_info {
 	uint16_t i2c_slaveaddr;
 	struct msm_camera_power_ctrl_t power_info;
 	struct msm_eeprom_mm_t mm_data;
+#ifdef CONFIG_MSMB_CAMERA_LEGACY
+	/* Legacy camera_v2 eeprom parser state */
+	struct eeprom_memory_map_t *eeprom_map;
+	uint32_t num_blocks;
+#endif
 };
 
 #endif
