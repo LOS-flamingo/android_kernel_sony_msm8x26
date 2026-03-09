@@ -113,6 +113,12 @@ int msm_camera_get_dt_power_setting_data(struct device_node *of_node,
 				ps[i].seq_val = SENSOR_GPIO_STANDBY;
 			else if (!strcmp(seq_name, "sensor_gpio_vdig"))
 				ps[i].seq_val = SENSOR_GPIO_VDIG;
+#ifdef CONFIG_SONY_FLAMINGO
+			else if (!strcmp(seq_name, "sensor_gpio_vio"))
+				ps[i].seq_val = SENSOR_GPIO_VIO;
+			else if (!strcmp(seq_name, "sensor_gpio_vana"))
+				ps[i].seq_val = SENSOR_GPIO_VANA;			
+#endif
 			else
 				rc = -EILSEQ;
 			break;
@@ -303,7 +309,6 @@ int32_t msm_camera_init_gpio_pin_tbl(struct device_node *of_node,
 		CDBG("%s qcom,gpio-reset %d\n", __func__,
 			gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VDIG]);
 	}
-//[All][Main][Camera][DMS][34003]Modify for Rear camera eeprom 20140219 S
 	if (of_property_read_bool(of_node, "qcom,gpio-vio") == true) {
 		rc = of_property_read_u32(of_node, "qcom,gpio-vio", &val);
 		if (rc < 0) {
