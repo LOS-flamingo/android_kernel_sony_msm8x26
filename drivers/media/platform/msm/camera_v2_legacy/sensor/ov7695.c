@@ -24,10 +24,8 @@
 #else
 #define CDBG(fmt, args...) do { } while (0)
 #endif
-//[all][Main][Camera][42153][01Begin] add driver attribute to read sensor id for mount test
 static ssize_t ov7695_read_id_attr(struct device *dev,struct device_attribute *attr, char *buf);
 static DEVICE_ATTR(read_id, 0664, ov7695_read_id_attr, NULL);
-//[all][Main][Camera][42153][02Begin] add driver attribute to read firmware version 
 static ssize_t ov7695_read_version_attr(struct device *dev,struct device_attribute *attr, char *buf);
 static DEVICE_ATTR(read_version, 0664, ov7695_read_version_attr, NULL);
 DEFINE_MSM_MUTEX(ov7695_mut);
@@ -40,11 +38,21 @@ static struct msm_sensor_power_setting ov7695_power_setting[] = {
 		.config_val = 0,
 		.delay = 1,
 	},
+#ifndef CONFIG_SONY_FLAMINGO
 	{	.seq_type = SENSOR_VREG,
 		.seq_val = CAM_VAF,		//use CAM_VAF for new CAM_VDDIO in RITA
 		.config_val = 0,
 		.delay = 0,
 	},
+#endif		
+#ifdef CONFIG_SONY_FLAMINGO
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VIO,
+		.config_val = GPIO_OUT_HIGH,
+		.delay = 0,
+	},
+#endif
 	{
 		.seq_type = SENSOR_VREG,  ///only USE for i2c pull high
 		.seq_val = CAM_VIO,
@@ -134,7 +142,11 @@ static struct msm_camera_i2c_reg_conf ov7695_recommend_settings[] = {
 	{0x3503 ,0x00},
 
 	//@@ OV7695_ISP
+#ifdef CONFIG_SONY_FLAMINGO
+	{0x0101 ,0x02},
+#else
 	{0x0101 ,0x01}, //mirror_on
+#endif
 	{0x5002 ,0x48}, //[7:6] Y source select// [3]LENC bias plus
 	{0x5910 ,0x00}, //Y formula
 	{0x3a0f ,0x58},
@@ -239,7 +251,6 @@ static struct msm_camera_i2c_reg_conf ov7695_recommend_settings[] = {
 	{0x3813 ,0x06},
 
 	{0x3630 ,0x79},//69// ADC7
-	//[BSP][CAMERA][KENT][01Begin]camera fine tune register setting
 #if 1
     //;@@ 0 0 OVM7695 IQ fine tune in arima office
     //;;lenc
@@ -350,7 +361,6 @@ static struct msm_camera_i2c_reg_conf ov7695_recommend_settings[] = {
     #endif
 };
 static struct msm_camera_i2c_reg_conf ov7695_stop[] = {
-	//[BSP][CAMERA][KENT][02Begin]fix the chroma of snapshot is different from the chroma of preview
 	{0x100 ,0x01},
 };
 static struct msm_camera_i2c_reg_conf ov7695_start[] = {
@@ -370,7 +380,6 @@ static const struct i2c_device_id ov7695_i2c_id[] = {
 	{OV7695_SENSOR_NAME, (kernel_ulong_t)&ov7695_s_ctrl},
 	{ }
 };
- //[BSP][CAMERA][KENT][03Begin]add white balance and antibanding setting
 static struct msm_camera_i2c_reg_conf ov7695_reg_wb_auto[] = {
     {0x5200,0x00},//Gain Man Disable
 };
@@ -434,7 +443,6 @@ static struct msm_camera_i2c_reg_conf ov7695_reg_antibanding[][1] = {
 	},
 };
 
-//[BSP][CAMERA][KENT][36089][01Begin]add SET_FPS function
 static struct msm_camera_i2c_reg_conf ov7695_reg_fps[][2] = {
 		{/* 15 */
 			{0x0342, 0x05},
@@ -541,17 +549,14 @@ static int32_t ov7695_platform_probe(struct platform_device *pdev)
 	const struct of_device_id *match;
 	match = of_match_device(ov7695_dt_match, &pdev->dev);
 	rc = msm_sensor_platform_probe(pdev, match->data);
-//[all][Main][Camera][42153][03Begin] add driver attribute to read sensor id for mount test
 	ret = device_create_file(&(pdev->dev), &dev_attr_read_id);
 	if (0 != ret)
 		pr_err("%s:%d creating attribute failed \n", __func__,__LINE__);
-//[all][Main][Camera][42153][04Begin] add driver attribute to read firmware version 
 	ret = device_create_file(&(pdev->dev), &dev_attr_read_version);
 		if (0 != ret)
 			pr_err("%s:%d creating attribute failed \n", __func__,__LINE__);
 	return rc;
 }
- //[BSP][CAMERA][KENT][04Begin]add white balance and antibanding setting
 static void ov7695_set_white_balance_mode(struct msm_sensor_ctrl_t *s_ctrl,
 	int value)
 {
@@ -612,7 +617,6 @@ static void ov7695_set_antibanding(struct msm_sensor_ctrl_t *s_ctrl, int value)
 	}
 }
 
-//[BSP][CAMERA][KENT][36089][02Begin]add SET_FPS function
 static void ov7695_set_fps(struct msm_sensor_ctrl_t *s_ctrl, int value)
 {
 	pr_err("%s %d", __func__, value);
@@ -970,7 +974,6 @@ int32_t ov7695_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 		pr_debug("%s: Cancelling Auto Focus", __func__);
 		break;
 		}
- //[BSP][CAMERA][KENT][05Begin]add white balance and antibanding setting
 		case CFG_SET_WHITE_BALANCE: {
 			int32_t wb_mode;
 			if (copy_from_user(&wb_mode, (void *)cdata->cfg.setting,
@@ -997,7 +1000,6 @@ int32_t ov7695_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 		ov7695_set_antibanding(s_ctrl, antibanding_mode);
 		break;
         	}
-       //[BSP][CAMERA][KENT][36089][03Begin]add SET_FPS function
 		case CFG_SET_FPS: {
 				int32_t fps_value;
 				if (copy_from_user(&fps_value, (void *)cdata->cfg.setting,
@@ -1010,7 +1012,6 @@ int32_t ov7695_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 			ov7695_set_fps(s_ctrl,fps_value);
 			break;
 			}
-		//[BSP][CAMERA][KENT][36089][03End]add SET_FPS function
 		default:
 		rc = -EFAULT;
 		break;
@@ -1021,7 +1022,6 @@ int32_t ov7695_sensor_config(struct msm_sensor_ctrl_t *s_ctrl,
 	return rc;
 }
 
-/*[BSP][Camera][Kent][33434][02End]The power L27 is used for Rita PDP1*/ 
 static struct msm_sensor_fn_t ov7695_sensor_func_tbl = {
 	.sensor_config = ov7695_sensor_config,
 	.sensor_power_up = msm_sensor_power_up,
@@ -1044,7 +1044,6 @@ module_exit(ov7695_exit_module);
 MODULE_DESCRIPTION("Aptina 1.26MP YUV sensor driver");
 MODULE_LICENSE("GPL v2");
 
-//[all][Main][Camera][42153][05Begin] add driver attribute to read sensor id for mount test
 static ssize_t ov7695_read_id_attr(struct device *dev,struct device_attribute *attr, char *buf)
 {
 	struct msm_sensor_ctrl_t *s_ctrl;
@@ -1079,7 +1078,6 @@ static ssize_t ov7695_read_id_attr(struct device *dev,struct device_attribute *a
 	 return sprintf(buf, "%x\n", chipid);
 }
 
-//[all][Main][Camera][42153][06Begin] add driver attribute to read firmware version 
 static ssize_t ov7695_read_version_attr(struct device *dev,struct device_attribute *attr, char *buf)
 {
 	struct msm_sensor_ctrl_t *s_ctrl;
