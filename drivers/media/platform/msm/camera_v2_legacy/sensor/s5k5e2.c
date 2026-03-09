@@ -14,10 +14,8 @@
 #include "msm_camera_io_util.h"
 #define S5K5E2_SENSOR_NAME "s5k5e2"
 DEFINE_MSM_MUTEX(s5k5e2_mut);
-//[all][Main][Camera][42153][01Begin] add driver attribute to read firmware version 
 static ssize_t s5k5e2_read_version_attr(struct device *dev,struct device_attribute *attr, char *buf);
 static DEVICE_ATTR(read_version, 0664, s5k5e2_read_version_attr, NULL);
-//[all][Main][Camera][42153][02Begin] add driver attribute to read camera vendor
 static ssize_t s5k5e2_read_vendor_attr(struct device *dev,struct device_attribute *attr, char *buf);
 static DEVICE_ATTR(read_vendor, 0664, s5k5e2_read_vendor_attr, NULL);
 static struct msm_sensor_ctrl_t s5k5e2_s_ctrl;
@@ -35,22 +33,37 @@ static struct msm_sensor_power_setting s5k5e2_power_setting[] = {
 		.config_val = GPIO_OUT_HIGH,
 		.delay = 0,
 	},
+#ifdef CONFIG_SONY_FLAMINGO
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VIO,
+		.config_val = GPIO_OUT_LOW,
+		.delay = 0,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VIO,
+		.config_val = GPIO_OUT_HIGH,
+		.delay = 0,
+	},
+#endif
 	{	.seq_type = SENSOR_VREG,
 		.seq_val = CAM_VDIG,
 		.config_val = 0,
 		.delay = 0,
 	},
+#ifndef CONFIG_SONY_FLAMINGO
 	{	.seq_type = SENSOR_VREG,
 		.seq_val = CAM_VAF,		//use CAM_VAF for new CAM_VDDIO in RITA
 		.config_val = 0,
 		.delay = 0,
 	},
+#endif	
 	{	.seq_type = SENSOR_VREG,  ///only USE for i2c pull high 	
 		.seq_val = CAM_VIO,
 		.config_val = 0,
 		.delay = 0,
 	},
-//[BSP][CAMERA][Kent][33449][01Begin]add the power control for AF
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_VAF,
@@ -63,7 +76,6 @@ static struct msm_sensor_power_setting s5k5e2_power_setting[] = {
 		.config_val = GPIO_OUT_HIGH,
 		.delay = 0,
 	},
-//[BSP][CAMERA][Kent][33449][01End]add the power control for AF
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_RESET,
@@ -145,12 +157,10 @@ static int32_t s5k5e2_platform_probe(struct platform_device *pdev)
 	match = of_match_device(s5k5e2_dt_match, &pdev->dev);
 	rc = msm_sensor_platform_probe(pdev, match->data);
 	pr_info("%s:%d\n", __func__, __LINE__);	
-//[all][Main][Camera][42153][02Begin] add driver attribute to read firmware version 
 	ret = device_create_file(&(pdev->dev), &dev_attr_read_version);
 	if (0 != ret)
 		pr_err("%s:%d creating attribute failed \n", __func__,__LINE__);
 
-//[all][Main][Camera][42153][03Begin] add driver attribute to read camera vendor
 	ret = device_create_file(&(pdev->dev), &dev_attr_read_vendor);
 	if (0 != ret)
 		pr_err("%s:%d creating attribute failed \n", __func__,__LINE__);
@@ -194,7 +204,6 @@ module_exit(s5k5e2_exit_module);
 MODULE_DESCRIPTION("s5k5e2");
 MODULE_LICENSE("GPL v2");
 
-//[all][Main][Camera][42153][03Begin] add driver attribute to read firmware version 
 static ssize_t s5k5e2_read_version_attr(struct device *dev,struct device_attribute *attr, char *buf)
 {
 	struct msm_sensor_ctrl_t *s_ctrl;
@@ -229,7 +238,6 @@ static ssize_t s5k5e2_read_version_attr(struct device *dev,struct device_attribu
 	 return sprintf(buf, "%x\n", version);
 }
 
-//[all][Main][Camera][42153][01Begin] add driver attribute to read camera vendor
 #if 1
 static struct msm_camera_i2c_reg_conf s5k5e2_read_eeprom[] = {
 	{0x0A00 ,0x04},
