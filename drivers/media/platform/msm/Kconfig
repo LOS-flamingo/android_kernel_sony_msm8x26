@@ -33,9 +33,23 @@ config MSMB_CAMERA_DEBUG
 	---help---
 	  Enable printk() debug for msm camera 2.0
 
+config MSMB_CAMERA_LEGACY
+	bool "Use legacy camera_v2 stack (LNX.LA.3.5.1-10610-8x26.0)"
+	depends on ARCH_MSM && VIDEO_V4L2 && I2C
+	depends on !MSMB_CAMERA
+	default n
+	---help---
+	  Build the legacy camera_v2 stack under camera_v2_legacy,
+	  sourced from LNX.LA.3.5.1-10610-8x26.0, instead of the
+	  default camera_v2 stack.
+
 if MSMB_CAMERA
 source "drivers/media/platform/msm/camera_v2/Kconfig"
 endif # MSMB_CAMERA
+
+if MSMB_CAMERA_LEGACY
+source "drivers/media/platform/msm/camera_v2_legacy/Kconfig"
+endif # MSMB_CAMERA_LEGACY
 
 source "drivers/media/platform/msm/vidc/Kconfig"
 source "drivers/media/platform/msm/wfd/Kconfig"
