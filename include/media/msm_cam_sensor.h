@@ -236,21 +236,15 @@ struct msm_sensor_power_setting {
 struct msm_sensor_power_setting_array {
 	struct msm_sensor_power_setting *power_setting;
 	uint16_t size;
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 	struct msm_sensor_power_setting *power_down_setting;
 	uint16_t size_down;
+#endif
 };
 
 struct msm_sensor_id_info_t {
 	uint16_t sensor_id_reg_addr;
 	uint16_t sensor_id;
-};
-
-enum msm_sensor_camera_id_t {
-	CAMERA_0,
-	CAMERA_1,
-	CAMERA_2,
-	CAMERA_3,
-	MAX_CAMERAS,
 };
 
 enum cci_i2c_master_t {
@@ -346,9 +340,18 @@ struct csi_lane_params_t {
 enum camb_position_t {
 	BACK_CAMERA_B,
 	FRONT_CAMERA_B,
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 	INVALID_CAMERA_B,
+#endif
 };
 
+#ifdef CONFIG_MSMB_CAMERA_LEGACY
+struct msm_sensor_info_t {
+	char sensor_name[MAX_SENSOR_NAME];
+	int32_t    session_id;
+	int32_t     subdev_id[SUB_MODULE_MAX];
+};
+#else
 struct msm_sensor_info_t {
 	char     sensor_name[MAX_SENSOR_NAME];
 	int32_t  session_id;
@@ -358,6 +361,7 @@ struct msm_sensor_info_t {
 	int modes_supported;
 	enum camb_position_t position;
 };
+#endif
 
 struct camera_vreg_t {
 	const char *reg_name;
@@ -371,7 +375,9 @@ struct camera_vreg_t {
 enum camerab_mode_t {
 	CAMERA_MODE_2D_B = (1<<0),
 	CAMERA_MODE_3D_B = (1<<1),
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 	CAMERA_MODE_INVALID = (1<<2),
+#endif
 };
 
 struct msm_sensor_init_params {
@@ -381,6 +387,22 @@ struct msm_sensor_init_params {
 	enum camb_position_t position;
 	/* sensor mount angle */
 	uint32_t            sensor_mount_angle;
+};
+
+#ifdef CONFIG_MSMB_CAMERA_LEGACY
+struct msm_camera_sensor_slave_info {
+	uint16_t slave_addr;
+	enum msm_camera_i2c_reg_addr_type addr_type;
+	struct msm_sensor_id_info_t sensor_id_info;
+	struct msm_sensor_power_setting_array power_setting_array;
+};
+#else
+enum msm_sensor_camera_id_t {
+	CAMERA_0,
+	CAMERA_1,
+	CAMERA_2,
+	CAMERA_3,
+	MAX_CAMERAS,
 };
 
 struct msm_camera_sensor_slave_info {
@@ -395,6 +417,7 @@ struct msm_camera_sensor_slave_info {
 	uint8_t  is_init_params_valid;
 	struct msm_sensor_init_params sensor_init_params;
 };
+#endif
 
 struct sensorb_cfg_data {
 	int cfgtype;
@@ -426,7 +449,9 @@ enum eeprom_cfg_type_t {
 	CFG_EEPROM_GET_CAL_DATA,
 	CFG_EEPROM_READ_CAL_DATA,
 	CFG_EEPROM_WRITE_DATA,
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 	CFG_EEPROM_GET_MM_INFO,
+#endif
 };
 
 struct eeprom_get_t {
@@ -443,11 +468,13 @@ struct eeprom_write_t {
 	uint32_t num_bytes;
 };
 
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 struct eeprom_get_mm_t {
 	uint32_t mm_support;
 	uint32_t mm_compression;
 	uint32_t mm_size;
 };
+#endif
 
 struct msm_eeprom_cfg_data {
 	enum eeprom_cfg_type_t cfgtype;
@@ -457,7 +484,9 @@ struct msm_eeprom_cfg_data {
 		struct eeprom_get_t get_data;
 		struct eeprom_read_t read_data;
 		struct eeprom_write_t write_data;
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 		struct eeprom_get_mm_t get_mm_data;
+#endif
 	} cfg;
 };
 
@@ -493,10 +522,15 @@ enum msm_actuator_cfg_type_t {
 	CFG_GET_ACTUATOR_INFO,
 	CFG_SET_ACTUATOR_INFO,
 	CFG_SET_DEFAULT_FOCUS,
+#ifdef CONFIG_MSMB_CAMERA_LEGACY
+	CFG_SET_POSITION,
+	CFG_MOVE_FOCUS,
+#else
 	CFG_MOVE_FOCUS,
 	CFG_SET_POSITION,
 	CFG_ACTUATOR_POWERDOWN,
 	CFG_ACTUATOR_POWERUP,
+#endif
 };
 
 enum actuator_type {
@@ -514,18 +548,24 @@ enum msm_actuator_addr_type {
 	MSM_ACTUATOR_WORD_ADDR,
 };
 
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 enum msm_actuator_i2c_operation {
 	MSM_ACT_WRITE = 0,
 	MSM_ACT_POLL,
 };
+#endif
 
 struct reg_settings_t {
 	uint16_t reg_addr;
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 	enum msm_actuator_addr_type addr_type;
+#endif
 	uint16_t reg_data;
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 	enum msm_actuator_data_type data_type;
 	enum msm_actuator_i2c_operation i2c_operation;
 	uint32_t delay;
+#endif
 };
 
 struct region_params_t {
@@ -649,6 +689,7 @@ struct msm_camera_led_cfg_t {
 	uint32_t flash_current[2];
 };
 
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 /* sensor init structures and enums */
 enum msm_sensor_init_cfg_type_t {
 	CFG_SINIT_PROBE,
@@ -662,6 +703,7 @@ struct sensor_init_cfg_data {
 		void *setting;
 	} cfg;
 };
+#endif
 
 #define VIDIOC_MSM_SENSOR_CFG \
 	_IOWR('V', BASE_VIDIOC_PRIVATE + 1, struct sensorb_cfg_data)
@@ -690,8 +732,10 @@ struct sensor_init_cfg_data {
 #define VIDIOC_MSM_SENSOR_GET_AF_STATUS \
 	_IOWR('V', BASE_VIDIOC_PRIVATE + 9, uint32_t)
 
+#ifndef CONFIG_MSMB_CAMERA_LEGACY
 #define VIDIOC_MSM_SENSOR_INIT_CFG \
 	_IOWR('V', BASE_VIDIOC_PRIVATE + 10, struct sensor_init_cfg_data)
+#endif
 
 #define MSM_V4L2_PIX_FMT_META v4l2_fourcc('M', 'E', 'T', 'A') /* META */
 
