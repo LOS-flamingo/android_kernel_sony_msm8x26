@@ -1982,6 +1982,13 @@ static int report_cc_based_soc(struct qpnp_bms_chip *chip)
 			soc = scale_soc_while_chg(chip, charge_time_sec,
 					chip->catch_up_time_sec,
 					soc, chip->last_soc);
+#ifdef CONFIG_SONY_FLAMINGO
+		if (charging_since_last_report && soc < chip->last_soc) {
+			pr_debug("clamp soc while charging: %d -> %d\n",
+					soc, chip->last_soc);
+			soc = chip->last_soc;
+		}
+#endif
 
 		/* if the battery is close to cutoff allow more change */
 		if (wake_lock_active(&chip->low_voltage_wake_lock))
