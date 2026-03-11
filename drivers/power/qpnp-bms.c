@@ -1115,6 +1115,8 @@ static int read_soc_params_raw(struct qpnp_bms_chip *chip,
 				int batt_temp)
 {
 	int warm_reset, rc;
+	int seed_ocv_uv;
+	bool reseed_ocv;
 
 	mutex_lock(&chip->bms_output_lock);
 
@@ -1142,13 +1144,28 @@ static int read_soc_params_raw(struct qpnp_bms_chip *chip,
 		pr_debug("PON_OCV_UV = %d, cc = %llx\n",
 				chip->last_ocv_uv, raw->cc);
 		warm_reset = qpnp_pon_is_warm_reset();
-		if (raw->last_good_ocv_uv < MIN_OCV_UV || warm_reset > 0) {
-			pr_debug("OCV is stale or bad, estimating new OCV.\n");
-			chip->last_ocv_uv = estimate_ocv(chip, batt_temp);
-			raw->last_good_ocv_uv = chip->last_ocv_uv;
-			reset_cc(chip, CLEAR_CC | CLEAR_SHDW_CC);
-			pr_debug("New PON_OCV_UV = %d, cc = %llx\n",
-					chip->last_ocv_uv, raw->cc);
+		reseed_ocv = raw->last_good_ocv_uv < MIN_OCV_UV || warm_reset > 0;
+		if (chip->shutdown_soc_invalid && !reseed_ocv) {
+			pr_debug("shutdown SoC invalid, reseeding OCV.\n");
+			reseed_ocv = true;
+		}
+		if (reseed_ocv) {
+			seed_ocv_uv = estimate_ocv(chip, batt_temp);
+			if (seed_ocv_uv > 0) {
+				chip->last_ocv_uv = seed_ocv_uv;
+				raw->last_good_ocv_uv = seed_ocv_uv;
+				raw->cc = 0;
+				raw->shdw_cc = 0;
+				reset_cc(chip, CLEAR_CC | CLEAR_SHDW_CC);
+				chip->last_ocv_temp = batt_temp;
+				chip->software_cc_uah = 0;
+				chip->software_shdw_cc_uah = 0;
+				chip->last_cc_uah = INT_MIN;
+				pr_debug("New seed OCV = %d\n", chip->last_ocv_uv);
+			} else {
+				pr_err("failed to estimate seed OCV: %d\n",
+						seed_ocv_uv);
+			}
 		}
 	} else if (chip->new_battery) {
 		/* if a new battery was inserted, estimate the ocv */
