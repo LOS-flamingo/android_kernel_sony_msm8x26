@@ -1927,8 +1927,7 @@ static int report_cc_based_soc(struct qpnp_bms_chip *chip)
 			}
 		}
 		
-		if (!charging && chip->last_is_charging
-				&& chip->last_soc != -EINVAL) {
+		if (!charging && chip->last_is_charging) {
 			soc = chip->last_soc;
 		}
 	}
