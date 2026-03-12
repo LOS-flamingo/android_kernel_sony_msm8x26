@@ -630,4 +630,9 @@ source "drivers/misc/altera-stapl/Kconfig"
 source "drivers/misc/mei/Kconfig"
 source "drivers/misc/vmw_vmci/Kconfig"
 source "drivers/misc/qcom/Kconfig"
+config PN544
+	bool "NXP PN544 NFC Controller Driver"
+	default n
+	help
+	  NXP PN544 Near Field Communication controller support.
 endmenu
