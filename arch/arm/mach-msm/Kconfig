@@ -965,6 +965,11 @@ config MSM_ENABLE_WDOG_DEBUG_CONTROL
 	  by disabling watchdog debug and boot partition select. This allows
 	  for a clean MSM reset for reboot scenarios.
 
+config SONY_FLAMINGO
+	bool "Support Sony Flamingo"
+	default n
+	help
+	  This enables support for Sony Mobile's 'flamingo' device.
 config MSM_UARTDM_Core_v14
 	bool "Use MSM BLSP based HSUART Core v1.4"
 	depends on SERIAL_MSM_HS

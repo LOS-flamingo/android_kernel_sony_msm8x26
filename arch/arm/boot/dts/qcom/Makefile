@@ -71,14 +71,12 @@ dtb-$(CONFIG_ARCH_MSM8226) += msm8226-sim.dtb \
 	msm8226-v2-720p-cdp.dtb \
 	msm8226-v2-320p-w-cdp.dtb \
 	msm8226-v2-1080p-cdp.dtb \
-	msm8226-v2-720p-mtp.dtb \
 	msm8226-v2-320p-w-mtp.dtb \
 	msm8226-v2-1080p-mtp.dtb \
 	msm8226-v2-qrd-evt.dtb \
 	msm8226-v2-qrd-dvt.dtb \
 	msm8926-v1-720p-cdp.dtb \
 	msm8926-v1-1080p-cdp.dtb \
-	msm8926-v1-720p-mtp.dtb \
 	msm8926-v1-1080p-mtp.dtb \
 	msm8926-v1-qrd.dtb \
 	msm8926-v1-qrd-skug.dtb \
@@ -92,6 +90,9 @@ dtb-$(CONFIG_ARCH_MSM8226) += msm8226-sim.dtb \
 	msm8926-v2-qrd.dtb \
 	msm8926-v2-qrd-skug.dtb \
 	msm8926-v2-qrd-skug-pvt.dtb \
+	msm8926-v1-yukon_flamingo-GINA.dtb \
+	msm8226-v2-yukon_flamingo-RITA.dtb \
+	msm8226-v2-yukon_flamingo-REX.dtb \
 	msm8926-v1-320p-w-mtp.dtb \
 	msm8926-v1-320p-w-g.dtb \
 	msm8226-v1-qrd-skuf.dtb \
@@ -108,6 +109,10 @@ dtb-$(CONFIG_ARCH_MSM8226) += msm8226-sim.dtb \
 	apq8026-v2-320p-w-mtp.dtb \
 	apq8026-v2-320p-w-g-mtp.dtb \
 	apq8026-v2-1080p-mtp.dtb
+ifneq ($(CONFIG_SONY_FLAMINGO),y)
+dtb-$(CONFIG_ARCH_MSM8226) += msm8226-v2-720p-mtp.dtb
+dtb-$(CONFIG_ARCH_MSM8226) += msm8926-v1-720p-mtp.dtb
+endif
 dtb-$(CONFIG_ARCH_MSM8610) += msm8610-rumi.dtb \
 	msm8610-v1-cdp.dtb \
 	msm8610-v2-cdp.dtb \
