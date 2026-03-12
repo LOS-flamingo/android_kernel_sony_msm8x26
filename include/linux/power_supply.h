@@ -159,6 +159,8 @@ enum power_supply_property {
 #ifdef CONFIG_SONY_FLAMINGO
 	POWER_SUPPLY_PROP_COLD_TEMP,
 	POWER_SUPPLY_PROP_HOT_TEMP,
+	POWER_SUPPLY_PROP_IS_DURING_CALL,
+	POWER_SUPPLY_PROP_IS_MAINTAIN,
 #endif
 	POWER_SUPPLY_PROP_RESISTANCE_CAPACITIVE,
 	/* unit is in ohms due to ID being typically in kohm range */

@@ -208,6 +208,8 @@ static struct device_attribute power_supply_attrs[] = {
 #ifdef CONFIG_SONY_FLAMINGO
 	POWER_SUPPLY_ATTR(temp_cold),
 	POWER_SUPPLY_ATTR(temp_hot),
+	POWER_SUPPLY_ATTR(is_during_call),
+	POWER_SUPPLY_ATTR(is_maintain),
 #endif
 	POWER_SUPPLY_ATTR(resistance_capacitive),
 	POWER_SUPPLY_ATTR(resistance_id),
@@ -343,6 +345,14 @@ int power_supply_uevent(struct device *dev, struct kobj_uevent_env *env)
 		}
 
 		dev_dbg(dev, "prop %s=%s\n", attrname, prop_buf);
+
+#ifdef CONFIG_SONY_FLAMINGO
+		if ((env->envp_idx+1) >= UEVENT_NUM_ENVP) {
+			kfree(attrname);
+			ret = 0;
+			goto out;	
+		}
+#endif
 
 		ret = add_uevent_var(env, "POWER_SUPPLY_%s=%s", attrname, prop_buf);
 		kfree(attrname);
