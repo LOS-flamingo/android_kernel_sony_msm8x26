@@ -96,7 +96,11 @@ module_param_named(
 #define IADC1_BMS_FAST_AVG_EN		0x5B
 
 /* Configuration for saving of shutdown soc/iavg */
+#ifdef CONFIG_SONY_FLAMINGO
+#define IGNORE_SOC_TEMP_DECIDEG		(-300)
+#else
 #define IGNORE_SOC_TEMP_DECIDEG		50
+#endif
 #define IAVG_STEP_SIZE_MA		10
 #define IAVG_INVALID			0xFF
 #define SOC_INVALID			0x7E
