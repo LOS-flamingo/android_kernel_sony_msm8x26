@@ -81,7 +81,11 @@
 #define MCLK_RATE_12288KHZ 12288000
 #define MCLK_RATE_9600KHZ 9600000
 
+#ifdef CONFIG_SONY_FLAMINGO
+#define DEFAULT_DCE_STA_WAIT 70
+#else
 #define DEFAULT_DCE_STA_WAIT 55
+#endif
 #define DEFAULT_DCE_WAIT 60000
 #define DEFAULT_STA_WAIT 5000
 
@@ -1436,6 +1440,15 @@ wcd9xxx_cs_find_plug_type(struct wcd9xxx_mbhc *mbhc,
 		vdce = __wcd9xxx_codec_sta_dce_v(mbhc, true, d->dce,
 						 dce_z, (u32)mb_mv);
 		d->_vdces = vdce;
+#ifdef CONFIG_SONY_FLAMINGO
+		if(d->_vdces < no_mic)
+			d->_type = PLUG_TYPE_HEADPHONE;
+		else if(d->_vdces <= 760 && d->_vdces > no_mic){
+			d->_type = PLUG_TYPE_HEADSET;
+			highhph_cnt++;
+		}else
+			d->_type = PLUG_TYPE_HIGH_HPH;
+#else
 		if (d->_vdces < no_mic)
 			d->_type = PLUG_TYPE_HEADPHONE;
 		else if (d->_vdces >= hs_max) {
@@ -1443,6 +1456,7 @@ wcd9xxx_cs_find_plug_type(struct wcd9xxx_mbhc *mbhc,
 			highhph_cnt++;
 		} else
 			d->_type = PLUG_TYPE_HEADSET;
+#endif
 
 		pr_debug("%s: DCE #%d, %04x, V %04d(%04d), HPHL %d TYPE %d\n",
 			 __func__, i, d->dce, vdce, d->_vdces,
@@ -1595,12 +1609,21 @@ wcd9xxx_find_plug_type(struct wcd9xxx_mbhc *mbhc,
 		else
 			d->_vdces = vdce;
 
+#ifdef CONFIG_SONY_FLAMINGO
+		if (d->_vdces >= no_mic && d->_vdces <= hs_max)
+			d->_type = PLUG_TYPE_HEADSET;
+		else if (d->_vdces < no_mic)
+			d->_type = PLUG_TYPE_HEADPHONE;
+		else
+			d->_type = PLUG_TYPE_HIGH_HPH;
+#else
 		if (d->_vdces >= no_mic && d->_vdces < hs_max)
 			d->_type = PLUG_TYPE_HEADSET;
 		else if (d->_vdces < no_mic)
 			d->_type = PLUG_TYPE_HEADPHONE;
 		else
 			d->_type = PLUG_TYPE_HIGH_HPH;
+#endif
 
 		ch += d->hphl_status & 0x01;
 		if (!d->swap_gnd && !d->hwvalue && !d->vddio) {
@@ -1811,13 +1834,13 @@ void wcd9xxx_turn_onoff_current_source(struct wcd9xxx_mbhc *mbhc,
 			snd_soc_update_bits(codec,
 					    mbhc_micb_regs->mbhc_reg,
 					    0x10, 0x00);
+			}
+			/* Nsc to acdb value */
+			snd_soc_update_bits(codec, WCD9XXX_A_CDC_MBHC_B1_CTL, 0x78,
+					btn_det->mbhc_nsc << 3);
+			mbhc->is_cs_enabled = false;
 		}
-		/* Nsc to acdb value */
-		snd_soc_update_bits(codec, WCD9XXX_A_CDC_MBHC_B1_CTL, 0x78,
-				    btn_det->mbhc_nsc << 3);
-		mbhc->is_cs_enabled = false;
 	}
-}
 
 static enum wcd9xxx_mbhc_plug_type
 wcd9xxx_codec_cs_get_plug_type(struct wcd9xxx_mbhc *mbhc, bool highhph)
@@ -3115,7 +3138,7 @@ static void wcd9xxx_correct_swch_plug(struct work_struct *work)
 		if (plug_type == PLUG_TYPE_INVALID) {
 			pr_debug("Invalid plug in attempt # %d\n", retry);
 			if (!mbhc->mbhc_cfg->detect_extn_cable &&
-			    retry == NUM_ATTEMPTS_TO_REPORT &&
+				retry == NUM_ATTEMPTS_TO_REPORT &&
 			    mbhc->current_plug == PLUG_TYPE_NONE) {
 				WCD9XXX_BCL_LOCK(mbhc->resmgr);
 				wcd9xxx_report_plug(mbhc, 1,
@@ -3377,10 +3400,21 @@ static int wcd9xxx_is_false_press(struct wcd9xxx_mbhc *mbhc)
 			mb_v = wcd9xxx_codec_sta_dce(mbhc, 0, true);
 			pr_debug("%s: STA[0]: %d,%d\n", __func__, mb_v,
 				 wcd9xxx_codec_sta_dce_v(mbhc, 0, mb_v));
+			/*
+			 * Workaround FM radio unresponsive to Play/Pause on some 
+			 * headsets: extend voltage range checks for flamingo
+			 */
+#ifdef CONFIG_SONY_FLAMINGO
+			if (mb_v < (v_b1_hu - 1000) || mb_v > (v_ins_hu + 3000)) {
+				r = 1;
+				break;
+			}
+#else
 			if (mb_v < v_b1_hu || mb_v > v_ins_hu) {
 				r = 1;
 				break;
 			}
+#endif
 		} else {
 			mb_v = wcd9xxx_codec_sta_dce(mbhc, 1, true);
 			pr_debug("%s: DCE[%d]: %d,%d\n", __func__, i, mb_v,
@@ -3715,6 +3749,23 @@ irqreturn_t wcd9xxx_dce_handler(int irq, void *data)
 				 * if left measurements are less than n_btn_con,
 				 * it's impossible to find button number
 				 */
+#ifdef CONFIG_SONY_FLAMINGO
+				/*
+				 * Fix hook key unresponsive issue on flamingo: read second 
+				 * DCE measurement and determine button correctly
+				 */
+				dce[0] = wcd9xxx_read_dce_result(codec);
+
+				mv[0] = __wcd9xxx_codec_sta_dce_v(mbhc, 1, dce[0], dce_z,
+					mbhc->mbhc_data.micb_mv);
+				mv_s[0] = vddio ? scale_v_micb_vddio(mbhc, mv[0], false) : mv[0];
+				btnmeas[0] = wcd9xxx_determine_button(mbhc, mv_s[0]);
+				pr_debug("%s: Second Meas HW - DCE 0x%x,%d,%d button %d\n", __func__,
+					dce[0] & 0xFFFF, mv[0], mv_s[0], btnmeas[0]);
+
+				if (btnmeas[0] == btnmeas[meas])
+					btn = btnmeas[meas];
+#endif
 				break;
 			}
 		}
