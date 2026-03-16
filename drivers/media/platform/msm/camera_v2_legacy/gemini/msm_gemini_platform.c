@@ -15,9 +15,9 @@
 #include <linux/clk.h>
 #include <linux/io.h>
 #include <linux/android_pmem.h>
-#include <mach/clk.h>
+#include <linux/clk/msm-clk.h>
 #include <soc/qcom/camera2.h>
-#include <mach/iommu_domains.h>
+#include <linux/msm_iommu_domains.h>
 #include "msm_gemini_platform.h"
 #include "msm_gemini_sync.h"
 #include "msm_gemini_common.h"
@@ -47,19 +47,19 @@ void msm_gemini_platform_p2v(struct file  *file,
 
 
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-uint32_t msm_gemini_platform_v2p(int fd, uint32_t len, struct file **file_p,
-				struct ion_handle **ionhandle)
-{
-	unsigned long paddr;
-	unsigned long size;
-	int rc;
+	uint32_t msm_gemini_platform_v2p(int fd, uint32_t len, struct file **file_p,
+					struct ion_handle **ionhandle)
+	{
+		ion_phys_addr_t paddr;
+		unsigned long size;
+		int rc;
 
 	*ionhandle = ion_import_dma_buf(gemini_client, fd);
 	if (IS_ERR_OR_NULL(*ionhandle))
 		return 0;
 
-	rc = ion_map_iommu(gemini_client, *ionhandle, CAMERA_DOMAIN, GEN_POOL,
-			SZ_4K, 0, &paddr, (unsigned long *)&size, 0, 0);
+		rc = ion_map_iommu(gemini_client, *ionhandle, CAMERA_DOMAIN, GEN_POOL,
+				SZ_4K, 0, &paddr, &size, 0, 0);
 	if (rc < 0) {
 		GMN_PR_ERR("%s: get_pmem_file fd %d error %d\n", __func__, fd,
 				rc);
@@ -71,7 +71,7 @@ uint32_t msm_gemini_platform_v2p(int fd, uint32_t len, struct file **file_p,
 		goto error1;
 	}
 
-	return paddr;
+		return (uint32_t)paddr;
 error1:
 	ion_free(gemini_client, *ionhandle);
 
@@ -103,7 +103,8 @@ static struct msm_cam_clk_info gemini_imem_clk_info[] = {
 static struct ion_client *msm_gemini_ion_client_create(unsigned int heap_mask,
 		  const char *name)
 {
-	return msm_ion_client_create(heap_mask, name);
+	(void)heap_mask;
+	return msm_ion_client_create(name);
 }
 #else
 static struct ion_client *msm_gemini_ion_client_create(unsigned int heap_mask,
@@ -280,4 +281,3 @@ int msm_gemini_platform_release(struct resource *mem, void *base, int irq,
 	GMN_DBG("%s:%d] success\n", __func__, __LINE__);
 	return result;
 }
-

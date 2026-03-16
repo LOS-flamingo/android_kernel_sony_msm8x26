@@ -16,8 +16,7 @@
 #include "msm_cci.h"
 #include "msm_camera_io_util.h"
 #include "msm_camera_i2c_mux.h"
-#include <mach/rpm-regulator.h>
-#include <mach/rpm-regulator-smd.h>
+#include <linux/regulator/rpm-smd-regulator.h>
 #include <linux/regulator/consumer.h>
 
 #ifdef CONFIG_SONY_FLAMINGO
@@ -306,18 +305,6 @@ static int32_t msm_sensor_get_dt_vreg_data(struct device_node *of_node,
 		pr_err("%s failed %d\n", __func__, __LINE__);
 		rc = -ENOMEM;
 		goto ERROR1;
-	}
-
-	rc = of_property_read_u32_array(of_node, "qcom,cam-vreg-type",
-		vreg_array, count);
-	if (rc < 0) {
-		pr_err("%s failed %d\n", __func__, __LINE__);
-		goto ERROR2;
-	}
-	for (i = 0; i < count; i++) {
-		sensordata->cam_vreg[i].type = vreg_array[i];
-		CDBG("%s cam_vreg[%d].type = %d\n", __func__, i,
-			sensordata->cam_vreg[i].type);
 	}
 
 	rc = of_property_read_u32_array(of_node, "qcom,cam-vreg-min-voltage",
@@ -1838,7 +1825,7 @@ static struct msm_camera_i2c_fn_t msm_sensor_qup_func_tbl = {
 	.i2c_write_conf_tbl = msm_camera_qup_i2c_write_conf_tbl,
 };
 
-int32_t msm_sensor_platform_probe(struct platform_device *pdev, void *data)
+int32_t msm_sensor_platform_probe(struct platform_device *pdev, const void *data)
 {
 	int32_t rc = 0;
 	struct msm_sensor_ctrl_t *s_ctrl =

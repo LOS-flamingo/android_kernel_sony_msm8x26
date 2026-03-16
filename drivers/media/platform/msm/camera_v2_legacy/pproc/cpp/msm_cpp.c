@@ -27,10 +27,10 @@
 #include <linux/timer.h>
 #include <linux/kernel.h>
 #include <linux/workqueue.h>
-#include <mach/clk.h>
-#include <mach/iommu_domains.h>
-#include <mach/iommu.h>
-#include <mach/vreg.h>
+#include <linux/clk/msm-clk.h>
+#include <linux/clk/msm-clk-provider.h>
+#include <linux/msm_iommu_domains.h>
+#include <linux/qcom_iommu.h>
 #include <media/msm_isp.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
@@ -243,7 +243,7 @@ static unsigned long msm_cpp_queue_buffer_info(struct cpp_device *cpp_dev,
 	}
 	rc = ion_map_iommu(cpp_dev->client, buff->map_info.ion_handle,
 		cpp_dev->domain_num, 0, SZ_4K, 0,
-		(unsigned long *)&buff->map_info.phy_addr,
+		&buff->map_info.phy_addr,
 		&buff->map_info.len, 0, 0);
 	if (rc < 0) {
 		pr_err("ION mmap failed\n");
@@ -466,7 +466,7 @@ static int cpp_init_mem(struct cpp_device *cpp_dev)
 
 	kref_init(&cpp_dev->refcount);
 	kref_get(&cpp_dev->refcount);
-	cpp_dev->client = msm_ion_client_create(-1, "cpp");
+	cpp_dev->client = msm_ion_client_create("cpp");
 
 	CPP_DBG("E\n");
 	if (!cpp_dev->domain) {
@@ -1641,7 +1641,7 @@ int msm_cpp_subscribe_event(struct v4l2_subdev *sd, struct v4l2_fh *fh,
 	struct v4l2_event_subscription *sub)
 {
 	CPP_DBG("Called\n");
-	return v4l2_event_subscribe(fh, sub, MAX_CPP_V4l2_EVENTS);
+	return v4l2_event_subscribe(fh, sub, MAX_CPP_V4l2_EVENTS, NULL);
 }
 
 int msm_cpp_unsubscribe_event(struct v4l2_subdev *sd, struct v4l2_fh *fh,
@@ -1732,7 +1732,7 @@ static int cpp_register_domain(void)
 }
 
 
-static int __devinit cpp_probe(struct platform_device *pdev)
+static int cpp_probe(struct platform_device *pdev)
 {
 	struct cpp_device *cpp_dev;
 	int rc = 0;

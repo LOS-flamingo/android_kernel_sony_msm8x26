@@ -15,13 +15,14 @@
 #include <linux/module.h>
 #include <linux/pm_qos.h>
 #include <linux/clk.h>
-#include <mach/clk.h>
+#include <linux/clk/msm-clk.h>
 #include <linux/io.h>
+#include <linux/msm_ion.h>
 
 #include <mach/camera.h>
-#include <mach/iommu_domains.h>
-#include <mach/msm_bus.h>
-#include <mach/msm_bus_board.h>
+#include <linux/msm_iommu_domains.h>
+#include <linux/msm-bus.h>
+#include <linux/msm-bus-board.h>
 
 #include "msm_jpeg_platform.h"
 #include "msm_jpeg_sync.h"
@@ -54,18 +55,18 @@ void msm_jpeg_platform_p2v(struct msm_jpeg_device *pgmn_dev, struct file  *file,
 	*ionhandle = NULL;
 }
 
-uint32_t msm_jpeg_platform_v2p(struct msm_jpeg_device *pgmn_dev, int fd,
-	uint32_t len, struct file **file_p, struct ion_handle **ionhandle,
-	int domain_num) {
-	unsigned long paddr;
-	unsigned long size;
-	int rc;
+	uint32_t msm_jpeg_platform_v2p(struct msm_jpeg_device *pgmn_dev, int fd,
+		uint32_t len, struct file **file_p, struct ion_handle **ionhandle,
+		int domain_num) {
+		ion_phys_addr_t paddr;
+		unsigned long size;
+		int rc;
 	*ionhandle = ion_import_dma_buf(pgmn_dev->jpeg_client, fd);
 	if (IS_ERR_OR_NULL(*ionhandle))
 		return 0;
 
-	rc = ion_map_iommu(pgmn_dev->jpeg_client, *ionhandle, domain_num, 0,
-		SZ_4K, 0, &paddr, (unsigned long *)&size, 0, 0);
+		rc = ion_map_iommu(pgmn_dev->jpeg_client, *ionhandle, domain_num, 0,
+			SZ_4K, 0, &paddr, &size, 0, 0);
 	JPEG_DBG("%s:%d] addr 0x%x size %ld", __func__, __LINE__,
 		(uint32_t)paddr, size);
 
@@ -289,9 +290,9 @@ int msm_jpeg_platform_init(struct platform_device *pdev,
 	*irq  = jpeg_irq;
 
 #ifdef CONFIG_SONY_FLAMINGO
-	pgmn_dev->jpeg_client = msm_ion_client_create(-1, "jpeg");
+	pgmn_dev->jpeg_client = msm_ion_client_create("jpeg");
 #else
-	pgmn_dev->jpeg_client = msm_ion_client_create(-1, "camera/jpeg");
+	pgmn_dev->jpeg_client = msm_ion_client_create("camera/jpeg");
 #endif
 	JPEG_DBG("%s:%d] success\n", __func__, __LINE__);
 
@@ -374,4 +375,3 @@ int msm_jpeg_platform_release(struct resource *mem, void *base, int irq,
 	JPEG_DBG("%s:%d] success\n", __func__, __LINE__);
 	return result;
 }
-

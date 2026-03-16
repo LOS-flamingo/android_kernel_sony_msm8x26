@@ -52,27 +52,27 @@ static int msm_csid_cid_lut(
 		CDBG("%s lut params num_cid = %d, cid = %d, dt = %x, df = %d\n",
 			__func__,
 			csid_lut_params->num_cid,
-			csid_lut_params->vc_cfg[i]->cid,
-			csid_lut_params->vc_cfg[i]->dt,
-			csid_lut_params->vc_cfg[i]->decode_format);
-		if (csid_lut_params->vc_cfg[i]->dt < 0x12 ||
-			csid_lut_params->vc_cfg[i]->dt > 0x37) {
+			csid_lut_params->vc_cfg[i].cid,
+			csid_lut_params->vc_cfg[i].dt,
+			csid_lut_params->vc_cfg[i].decode_format);
+		if (csid_lut_params->vc_cfg[i].dt < 0x12 ||
+			csid_lut_params->vc_cfg[i].dt > 0x37) {
 			pr_err("%s: unsupported data type 0x%x\n",
-				 __func__, csid_lut_params->vc_cfg[i]->dt);
+				 __func__, csid_lut_params->vc_cfg[i].dt);
 			return rc;
 		}
 		val = msm_camera_io_r(csidbase + CSID_CID_LUT_VC_0_ADDR +
-			(csid_lut_params->vc_cfg[i]->cid >> 2) * 4)
-			& ~(0xFF << ((csid_lut_params->vc_cfg[i]->cid % 4) *
+			(csid_lut_params->vc_cfg[i].cid >> 2) * 4)
+			& ~(0xFF << ((csid_lut_params->vc_cfg[i].cid % 4) *
 			8));
-		val |= (csid_lut_params->vc_cfg[i]->dt <<
-			((csid_lut_params->vc_cfg[i]->cid % 4) * 8));
+		val |= (csid_lut_params->vc_cfg[i].dt <<
+			((csid_lut_params->vc_cfg[i].cid % 4) * 8));
 		msm_camera_io_w(val, csidbase + CSID_CID_LUT_VC_0_ADDR +
-			(csid_lut_params->vc_cfg[i]->cid >> 2) * 4);
+			(csid_lut_params->vc_cfg[i].cid >> 2) * 4);
 
-		val = (csid_lut_params->vc_cfg[i]->decode_format << 4) | 0x3;
+		val = (csid_lut_params->vc_cfg[i].decode_format << 4) | 0x3;
 		msm_camera_io_w(val, csidbase + CSID_CID_n_CFG_ADDR +
-			(csid_lut_params->vc_cfg[i]->cid * 4));
+			(csid_lut_params->vc_cfg[i].cid * 4));
 	}
 	return rc;
 }
@@ -439,8 +439,6 @@ static long msm_csid_cmd(struct csid_device *csid_dev, void *arg)
 		break;
 	case CSID_CFG: {
 		struct msm_camera_csid_params csid_params;
-		struct msm_camera_csid_vc_cfg *vc_cfg = NULL;
-		int8_t i = 0;
 		if (copy_from_user(&csid_params,
 			(void *)cdata->cfg.csid_params,
 			sizeof(struct msm_camera_csid_params))) {
@@ -455,33 +453,7 @@ static long msm_csid_cmd(struct csid_device *csid_dev, void *arg)
 			rc = -EINVAL;
 			break;
 		}
-		for (i = 0; i < csid_params.lut_params.num_cid; i++) {
-			vc_cfg = kzalloc(csid_params.lut_params.num_cid *
-				sizeof(struct msm_camera_csid_vc_cfg),
-				GFP_KERNEL);
-			if (!vc_cfg) {
-				pr_err("%s: %d failed\n", __func__, __LINE__);
-				for (i--; i >= 0; i--)
-					kfree(csid_params.lut_params.vc_cfg[i]);
-				rc = -ENOMEM;
-				break;
-			}
-			if (copy_from_user(vc_cfg,
-				(void *)csid_params.lut_params.vc_cfg[i],
-				(csid_params.lut_params.num_cid *
-				sizeof(struct msm_camera_csid_vc_cfg)))) {
-				pr_err("%s: %d failed\n", __func__, __LINE__);
-				kfree(vc_cfg);
-				for (i--; i >= 0; i--)
-					kfree(csid_params.lut_params.vc_cfg[i]);
-				rc = -EFAULT;
-				break;
-			}
-			csid_params.lut_params.vc_cfg[i] = vc_cfg;
-		}
 		rc = msm_csid_config(csid_dev, &csid_params);
-		for (i--; i >= 0; i--)
-			kfree(csid_params.lut_params.vc_cfg[i]);
 		break;
 	}
 	case CSID_RELEASE:
@@ -545,7 +517,7 @@ static const struct v4l2_subdev_ops msm_csid_subdev_ops = {
 	.core = &msm_csid_subdev_core_ops,
 };
 
-static int __devinit csid_probe(struct platform_device *pdev)
+static int csid_probe(struct platform_device *pdev)
 {
 	struct csid_device *new_csid_dev;
 	uint32_t csi_vdd_voltage = 0;

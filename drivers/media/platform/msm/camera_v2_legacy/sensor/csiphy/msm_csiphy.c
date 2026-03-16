@@ -16,7 +16,6 @@
 #include <linux/of.h>
 #include <linux/module.h>
 #include <linux/irqreturn.h>
-#include <mach/vreg.h>
 #include "msm_csiphy.h"
 #include "msm_sd.h"
 #include "msm_csiphy_hwreg.h"
@@ -656,7 +655,7 @@ static const struct v4l2_subdev_ops msm_csiphy_subdev_ops = {
 	.core = &msm_csiphy_subdev_core_ops,
 };
 
-static int __devinit csiphy_probe(struct platform_device *pdev)
+static int csiphy_probe(struct platform_device *pdev)
 {
 	struct csiphy_device *new_csiphy_dev;
 	int rc = 0;
