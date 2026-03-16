@@ -3273,7 +3273,7 @@ static struct i2c_driver ektf2k_ts_driver = {
 	},
 };
 
-static int __devinit elan_ktf2k_ts_init(void)
+static int elan_ktf2k_ts_init(void)
 {
 	printk(KERN_INFO "[elan] %s driver version 0x0005: Integrated 2, 5, and 10 fingers together and auto-mapping resolution\n", __func__);
 	return i2c_add_driver(&ektf2k_ts_driver);
@@ -3290,5 +3290,4 @@ module_exit(elan_ktf2k_ts_exit);
 
 MODULE_DESCRIPTION("ELAN KTF2K Touchscreen Driver");
 MODULE_LICENSE("GPL");
-
 
