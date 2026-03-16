@@ -1249,7 +1249,6 @@ end:
 	return dsi_pan_node;
 }
 
-static int mdss_dsi_ctrl_probe(struct platform_device *pdev)
 /* [All][Main][LCM][DMS][39892][StevenChen] Add function of getting panel name for other kernel module use 2014/06/20 begin */
 void mdss_get_panel_name(char *StrBuff)
 {

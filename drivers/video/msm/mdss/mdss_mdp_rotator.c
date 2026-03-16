@@ -154,8 +154,8 @@ static int mdss_mdp_rotator_kickoff(struct mdss_mdp_ctl *ctl,
 //[All][Main][Camera][35917] QCT Patch for AF and Throughput issue 20140409 S
 	/* First kickoff change vbif settings */
 	if (!count) {
-		writel_relaxed(0x08010808, mdss_res->vbif_base + 0xB0);
-		writel_relaxed(0x02101010, mdss_res->vbif_base + 0xC0);
+		MDSS_VBIF_WRITE(mdss_res, 0xB0, 0x08010808);
+		MDSS_VBIF_WRITE(mdss_res, 0xC0, 0x02101010);
 		count++;
 	}
 	ret = mdss_mdp_writeback_display_commit(ctl, &wb_args);
@@ -605,8 +605,8 @@ static int mdss_mdp_rotator_finish(struct mdss_mdp_rotator_session *rot)
 			mixer = tmp->mixer_left;
 		mdss_mdp_wb_mixer_destroy(mixer);
 //[All][Main][Camera][35917] QCT Patch for AF and Throughput issue 20140409 S
-		writel_relaxed(0x08080808, mdss_res->vbif_base + 0xB0);
-		writel_relaxed(0x10101010, mdss_res->vbif_base + 0xC0);
+		MDSS_VBIF_WRITE(mdss_res, 0xB0, 0x08080808);
+		MDSS_VBIF_WRITE(mdss_res, 0xC0, 0x10101010);
 		count = 0;
 	}
 	return ret;
