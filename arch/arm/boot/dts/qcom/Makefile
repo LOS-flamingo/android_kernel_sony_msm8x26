@@ -184,6 +184,12 @@ else
 DTB_LIST := $(dtb-y)
 endif
 
+ifeq ($(CONFIG_SONY_FLAMINGO),y)
+DTB_LIST := msm8926-v1-yukon_flamingo-GINA.dtb \
+	msm8226-v2-yukon_flamingo-RITA.dtb \
+	msm8226-v2-yukon_flamingo-REX.dtb
+endif
+
 targets += dtbs
 targets += $(addprefix ../, $(DTB_LIST))
 endif
@@ -192,5 +198,13 @@ $(obj)/../%.dtb: $(src)/%.dts FORCE
 	$(call if_changed_dep,dtc)
 
 dtbs: $(addprefix $(obj)/../,$(DTB_LIST))
+ifeq ($(CONFIG_SONY_FLAMINGO),y)
+	@for f in $(obj)/../*.dtb; do \
+		case " $(addprefix $(obj)/../,$(DTB_LIST)) " in \
+			*" $$f "*) ;; \
+			*) rm -f $$f ;; \
+		esac; \
+	done
+endif
 
 clean-files := *.dtb
