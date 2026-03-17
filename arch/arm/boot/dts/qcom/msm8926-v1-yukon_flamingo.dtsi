@@ -56,9 +56,9 @@
 
 / {
 	qcom,memblock-remove = <0x08000000 0x7500000
-		0x2ff80000 0x80000
 		0x3f200000 0x100000
 		0x0fa00000 0x500000>;
+	qcom,memblock-reserve = <0x2ff80000 0x80000>;
 };
 
 #include "dsi-panel-truly-hx8379a-pdp2-qhd-video.dtsi"
