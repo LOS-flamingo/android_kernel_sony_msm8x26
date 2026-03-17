@@ -25,6 +25,7 @@
 #include <linux/of_fdt.h>
 #include <linux/of_irq.h>
 #include <linux/memory.h>
+#include <linux/memblock.h>
 #include <linux/regulator/cpr-regulator.h>
 #include <linux/regulator/fan53555.h>
 #include <linux/regulator/onsemi-ncp6335d.h>
@@ -73,6 +74,18 @@ static struct of_dev_auxdata msm8226_auxdata_lookup[] __initdata = {
 
 static void __init msm8226_reserve(void)
 {
+#ifdef CONFIG_SONY_FLAMINGO
+	/*
+	 * Keep lk2nd ramoops memory out of the buddy allocator during
+	 * bring-up; DT memblock-remove parsing can vary across boot paths.
+	 */
+	if (memblock_reserve(0x2ff80000, 0x80000))
+		pr_err("%s: failed to reserve lk2nd ramoops region\n",
+		       __func__);
+	else
+		pr_info("%s: reserved lk2nd ramoops region 0x2ff80000-0x2fffffff\n",
+			__func__);
+#endif
 	of_scan_flat_dt(dt_scan_for_memory_reserve, NULL);
 }
 
