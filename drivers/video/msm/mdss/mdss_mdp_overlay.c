@@ -503,6 +503,7 @@ int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
 	u32 bwc_enabled;
 	u32 rot90;
 	bool is_vig_needed = false;
+	bool allow_dma_fallback = false;
 	u32 left_lm_w = left_lm_w_from_mfd(mfd);
 
 	if (mdp5_data->ctl == NULL)
@@ -609,8 +610,19 @@ int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
 
 		pipe = mdss_mdp_pipe_alloc(mixer, pipe_type, left_blend_pipe);
 
+		/*
+		 * Legacy userspace can request DMA for foreground UI layers
+		 * (MDP_IS_FG). If DMA is busy, allow RGB/VIG fallback instead
+		 * of failing allocation.
+		 */
+		if ((req->pipe_type == PIPE_TYPE_AUTO) ||
+		    ((req->pipe_type == PIPE_TYPE_DMA) &&
+		     !(req->flags & MDP_OV_PIPE_FORCE_DMA) &&
+		     (req->flags & MDP_IS_FG) && !fmt->is_yuv))
+			allow_dma_fallback = true;
+
 		/* RGB pipes can be used instead of DMA */
-		if ((req->pipe_type == PIPE_TYPE_AUTO) && !pipe &&
+		if (allow_dma_fallback && !pipe &&
 		    (pipe_type == MDSS_MDP_PIPE_TYPE_DMA)) {
 			pr_debug("giving RGB pipe for fb%d. flags:0x%x\n",
 				mfd->index, req->flags);
@@ -620,7 +632,7 @@ int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
 		}
 
 		/* VIG pipes can also support RGB format */
-		if ((req->pipe_type == PIPE_TYPE_AUTO) && !pipe &&
+		if (allow_dma_fallback && !pipe &&
 		    (pipe_type == MDSS_MDP_PIPE_TYPE_RGB)) {
 			pr_debug("giving ViG pipe for fb%d. flags:0x%x\n",
 				mfd->index, req->flags);
