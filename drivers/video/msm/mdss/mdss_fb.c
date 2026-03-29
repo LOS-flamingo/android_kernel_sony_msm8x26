@@ -3100,6 +3100,42 @@ static int mdss_fb_display_commit(struct fb_info *info,
 	return ret;
 }
 
+/*
+ * Legacy userspace (3.4-era) sends MSMFB_DISPLAY_COMMIT with a smaller
+ * payload containing a single ROI. Translate it to the newer ABI.
+ */
+struct mdp_display_commit_legacy {
+	u32 flags;
+	u32 wait_for_finish;
+	struct fb_var_screeninfo var;
+	struct mdp_rect roi;
+};
+
+#define MSMFB_DISPLAY_COMMIT_LEGACY \
+	_IOW(MSMFB_IOCTL_MAGIC, 164, struct mdp_display_commit_legacy)
+
+static int mdss_fb_display_commit_legacy(struct fb_info *info,
+					unsigned long *argp)
+{
+	int ret;
+	struct mdp_display_commit_legacy legacy_commit;
+	struct mdp_display_commit disp_commit;
+
+	ret = copy_from_user(&legacy_commit, argp, sizeof(legacy_commit));
+	if (ret) {
+		pr_err("%s:copy_from_user failed\n", __func__);
+		return ret;
+	}
+
+	memset(&disp_commit, 0, sizeof(disp_commit));
+	disp_commit.flags = legacy_commit.flags;
+	disp_commit.wait_for_finish = legacy_commit.wait_for_finish;
+	disp_commit.var = legacy_commit.var;
+	disp_commit.l_roi = legacy_commit.roi;
+
+	return mdss_fb_pan_display_ex(info, &disp_commit);
+}
+
 static int __ioctl_wait_idle(struct msm_fb_data_type *mfd, u32 cmd)
 {
 	int ret = 0;
@@ -3207,6 +3243,10 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 
 	case MSMFB_DISPLAY_COMMIT:
 		ret = mdss_fb_display_commit(info, argp);
+		break;
+
+	case MSMFB_DISPLAY_COMMIT_LEGACY:
+		ret = mdss_fb_display_commit_legacy(info, argp);
 		break;
 
 	case MSMFB_LPM_ENABLE:
