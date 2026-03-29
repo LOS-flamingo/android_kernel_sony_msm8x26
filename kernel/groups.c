@@ -6,6 +6,7 @@
 #include <linux/slab.h>
 #include <linux/security.h>
 #include <linux/syscalls.h>
+#include <linux/highuid.h>
 #include <asm/uaccess.h>
 
 /* init to 2 - one for init_task, one to ensure it is never freed */
@@ -94,8 +95,20 @@ static int groups_from_user(struct group_info *group_info,
 			return -EFAULT;
 
 		kgid = make_kgid(user_ns, gid);
-		if (!gid_valid(kgid))
-			return -EINVAL;
+		if (!gid_valid(kgid)) {
+			/*
+			 * TEMP/HACK: unresolved userspace group names can arrive
+			 * here as gid -1 (0xFFFFFFFF). Keep boot unblocked by
+			 * mapping only this sentinel to overflowgid.
+			 */
+			if (gid == (gid_t)-1) {
+				kgid = make_kgid(user_ns, (gid_t)overflowgid);
+				if (!gid_valid(kgid))
+					return -EINVAL;
+			} else {
+				return -EINVAL;
+			}
+		}
 
 		GROUP_AT(group_info, i) = kgid;
 	}
