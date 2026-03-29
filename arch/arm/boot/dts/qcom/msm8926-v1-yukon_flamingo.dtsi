@@ -58,6 +58,14 @@
 	qcom,cont-splash-enabled;
 };
 
+&modem_mem {
+	/*
+	 * 8926 SS modem images load from 0x08000000 on LW.2.1-based trees.
+	 * Reserve the full modem range so PIL does not overlap kernel memory.
+	 */
+	reg = <0x08000000 0x5c00000>;
+};
+
 / {
 	qcom,memblock-remove = <0x08000000 0x7500000
 		0x3f200000 0x100000
