@@ -6,6 +6,7 @@
 #include <linux/slab.h>
 #include <linux/security.h>
 #include <linux/syscalls.h>
+#include <linux/sched.h>
 #include <linux/highuid.h>
 #include <asm/uaccess.h>
 
@@ -105,7 +106,14 @@ static int groups_from_user(struct group_info *group_info,
 				kgid = make_kgid(user_ns, (gid_t)overflowgid);
 				if (!gid_valid(kgid))
 					return -EINVAL;
+				pr_warn_ratelimited("setgroups: TEMP/HACK remap gid=-1 to overflowgid=%u pid=%d comm=%s idx=%d ngroups=%u\n",
+						    (unsigned int)overflowgid,
+						    task_pid_nr(current), current->comm,
+						    i, count);
 			} else {
+				pr_err_ratelimited("setgroups: invalid gid pid=%d comm=%s idx=%d gid=%u ngroups=%u\n",
+						   task_pid_nr(current), current->comm,
+						   i, (unsigned int)gid, count);
 				return -EINVAL;
 			}
 		}
@@ -248,19 +256,30 @@ SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
 
 	if (!nsown_capable(CAP_SETGID))
 		return -EPERM;
-	if ((unsigned)gidsetsize > NGROUPS_MAX)
+	if ((unsigned)gidsetsize > NGROUPS_MAX) {
+		pr_err_ratelimited("setgroups: invalid gidsetsize pid=%d comm=%s gidsetsize=%d max=%d\n",
+				   task_pid_nr(current), current->comm,
+				   gidsetsize, NGROUPS_MAX);
 		return -EINVAL;
+	}
 
 	group_info = groups_alloc(gidsetsize);
 	if (!group_info)
 		return -ENOMEM;
 	retval = groups_from_user(group_info, grouplist);
 	if (retval) {
+		pr_err_ratelimited("setgroups: groups_from_user failed pid=%d comm=%s gidsetsize=%d ret=%d\n",
+				   task_pid_nr(current), current->comm,
+				   gidsetsize, retval);
 		put_group_info(group_info);
 		return retval;
 	}
 
 	retval = set_current_groups(group_info);
+	if (retval)
+		pr_err_ratelimited("setgroups: set_current_groups failed pid=%d comm=%s gidsetsize=%d ret=%d\n",
+				   task_pid_nr(current), current->comm,
+				   gidsetsize, retval);
 	put_group_info(group_info);
 
 	return retval;

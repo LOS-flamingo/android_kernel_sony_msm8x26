@@ -13,6 +13,7 @@
 #include <linux/highuid.h>
 #include <linux/security.h>
 #include <linux/syscalls.h>
+#include <linux/sched.h>
 
 #include <asm/uaccess.h>
 
@@ -139,8 +140,12 @@ static int groups16_from_user(struct group_info *group_info,
 			return  -EFAULT;
 
 		kgid = make_kgid(user_ns, low2highgid(group));
-		if (!gid_valid(kgid))
+		if (!gid_valid(kgid)) {
+			pr_err_ratelimited("setgroups16: invalid gid pid=%d comm=%s idx=%d gid16=%u ngroups=%u\n",
+					   task_pid_nr(current), current->comm,
+					   i, (unsigned int)group, group_info->ngroups);
 			return -EINVAL;
+		}
 
 		GROUP_AT(group_info, i) = kgid;
 	}
@@ -178,19 +183,30 @@ SYSCALL_DEFINE2(setgroups16, int, gidsetsize, old_gid_t __user *, grouplist)
 
 	if (!nsown_capable(CAP_SETGID))
 		return -EPERM;
-	if ((unsigned)gidsetsize > NGROUPS_MAX)
+	if ((unsigned)gidsetsize > NGROUPS_MAX) {
+		pr_err_ratelimited("setgroups16: invalid gidsetsize pid=%d comm=%s gidsetsize=%d max=%d\n",
+				   task_pid_nr(current), current->comm,
+				   gidsetsize, NGROUPS_MAX);
 		return -EINVAL;
+	}
 
 	group_info = groups_alloc(gidsetsize);
 	if (!group_info)
 		return -ENOMEM;
 	retval = groups16_from_user(group_info, grouplist);
 	if (retval) {
+		pr_err_ratelimited("setgroups16: groups16_from_user failed pid=%d comm=%s gidsetsize=%d ret=%d\n",
+				   task_pid_nr(current), current->comm,
+				   gidsetsize, retval);
 		put_group_info(group_info);
 		return retval;
 	}
 
 	retval = set_current_groups(group_info);
+	if (retval)
+		pr_err_ratelimited("setgroups16: set_current_groups failed pid=%d comm=%s gidsetsize=%d ret=%d\n",
+				   task_pid_nr(current), current->comm,
+				   gidsetsize, retval);
 	put_group_info(group_info);
 
 	return retval;
