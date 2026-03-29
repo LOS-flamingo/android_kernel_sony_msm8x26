@@ -2,6 +2,10 @@
 #include "dsi-panel-truly-hx8379a-qhd-video.dtsi"
 
 &soc {
+	sound {
+		status = "disabled";
+	};
+
 	sound-9302 {
 		qcom,audio-routing =
 			"RX_BIAS", "MCLK",
